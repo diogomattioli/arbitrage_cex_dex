@@ -7,7 +7,7 @@ mod exchange;
 mod engine;
 mod websocket;
 
-use exchange::binance::Binance;
+use exchange::{ binance::Binance, kraken::Kraken };
 
 pub type Sender<T> = tokio::sync::watch::Sender<T>;
 
@@ -40,5 +40,9 @@ async fn main() {
         }
     };
 
-    join!(engine_fut, websocket_run::<Binance>(tx, ["btcusdt"]));
+    join!(
+        engine_fut,
+        websocket_run::<Binance>(tx.clone(), ["btcusdt"]),
+        websocket_run::<Kraken>(tx, ["BTC/USDT"])
+    );
 }
