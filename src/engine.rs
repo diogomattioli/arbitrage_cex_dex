@@ -11,16 +11,16 @@ pub struct Engine<I, P = Decimal> {
 }
 
 impl<I, P> Engine<I, P> where I: Hash + Ord + Clone, P: Ord + Clone {
-    pub fn update(&mut self, id: I, price: P) {
+    pub fn update(&mut self, exchange_id: I, price: P) {
         if
-            let Some(previous_price) = self.ids.insert(id.clone(), price.clone()) // O(1)
+            let Some(previous_price) = self.ids.insert(exchange_id.clone(), price.clone()) // O(1)
         {
             if previous_price != price {
                 // search and remove
                 if
                     let Some(set) = self.prices.get_mut(&previous_price) // O(log(n))
                 {
-                    set.remove(&id); // O(1)
+                    set.remove(&exchange_id); // O(1)
                     if set.is_empty() {
                         self.prices.remove(&previous_price); // O(log(n))
                     }
@@ -29,7 +29,7 @@ impl<I, P> Engine<I, P> where I: Hash + Ord + Clone, P: Ord + Clone {
         }
 
         let set = self.prices.entry(price).or_insert(HashSet::new()); // O(2log(n))
-        set.insert(id); // O(1)
+        set.insert(exchange_id); // O(1)
     }
 
     pub fn lowest_price(&mut self) -> Option<(&P, impl Iterator<Item = &I>)> {

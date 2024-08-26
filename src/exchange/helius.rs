@@ -3,15 +3,15 @@ use serde::Deserialize;
 
 use rust_decimal::Decimal;
 
-use crate::websocket::ExchangeWebSocketConfig;
+use crate::{ websocket::ExchangeWebSocketConfig, MarketPrice };
 
 use std::env;
 
 struct Helius;
 
 impl ExchangeWebSocketConfig for Helius {
-    fn name() -> &'static str {
-        "Helius"
+    fn exchange_id() -> &'static str {
+        "helius"
     }
 
     fn url() -> String {
@@ -33,11 +33,11 @@ impl ExchangeWebSocketConfig for Helius {
         )
     }
 
-    fn parse_incoming_payload(payload: String) -> Option<(String, Decimal)> {
+    fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
         match serde_json::from_str::<HeliusAccount>(&payload) {
             Ok(account) => {
                 let price = account.price();
-                Some((account.owner, price))
+                Some(MarketPrice { exchange_id: Self::exchange_id(), market: account.owner, price })
             }
             Err(_) => None,
         }

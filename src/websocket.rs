@@ -3,41 +3,40 @@ use futures::prelude::*;
 use std::time::Duration;
 
 use async_tungstenite::{ tokio::connect_async, tungstenite::Message };
-use rust_decimal::Decimal;
 use tokio::time::sleep;
 
-use crate::Sender;
+use crate::{ Sender, MarketPrice };
 
 pub trait ExchangeWebSocketConfig {
-    fn name() -> &'static str;
+    fn exchange_id() -> &'static str;
     fn url() -> String;
     fn get_subscribe_payload<'a>(pairs: impl AsRef<[&'a str]>) -> String;
-    fn parse_incoming_payload(payload: String) -> Option<(String, Decimal)>;
+    fn parse_incoming_payload(payload: String) -> Option<MarketPrice>;
 }
 
 pub async fn websocket_run<T: ExchangeWebSocketConfig>(
-    tx: Sender<(String, Decimal)>,
+    tx: Sender<MarketPrice>,
     pairs: impl AsRef<[&str]>
 ) {
     while !tx.is_closed() {
         sleep(Duration::from_millis(100)).await;
 
-        log::debug!("{} connecting...", T::name());
+        log::debug!("{} connecting...", T::exchange_id());
 
         let Ok((mut stream, _)) = connect_async(T::url()).await else {
             continue;
         };
 
-        log::debug!("{} connected", T::name());
+        log::debug!("{} connected", T::exchange_id());
 
         if stream.send(Message::Text(T::get_subscribe_payload(pairs.as_ref()))).await.is_err() {
             continue;
         }
 
-        log::debug!("{} subscribed", T::name());
+        log::debug!("{} subscribed", T::exchange_id());
 
         while let Some(Ok(message)) = stream.next().await {
-            log::trace!("{} {message:?}", T::name());
+            log::trace!("{} {message:?}", T::exchange_id());
 
             match message {
                 Message::Text(payload) => {

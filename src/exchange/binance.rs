@@ -3,13 +3,13 @@ use serde::Deserialize;
 
 use rust_decimal::Decimal;
 
-use crate::websocket::ExchangeWebSocketConfig;
+use crate::{ websocket::ExchangeWebSocketConfig, MarketPrice };
 
 struct Binance;
 
 impl ExchangeWebSocketConfig for Binance {
-    fn name() -> &'static str {
-        "Binance"
+    fn exchange_id() -> &'static str {
+        "binance"
     }
 
     fn url() -> String {
@@ -28,11 +28,11 @@ impl ExchangeWebSocketConfig for Binance {
         )
     }
 
-    fn parse_incoming_payload(payload: String) -> Option<(String, Decimal)> {
+    fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
         match serde_json::from_str::<BinanceBookTicker>(&payload) {
             Ok(tick) => {
                 let price = tick.price();
-                Some((tick.symbol, price))
+                Some(MarketPrice { exchange_id: Self::exchange_id(), market: tick.symbol, price })
             }
             Err(_) => None,
         }
