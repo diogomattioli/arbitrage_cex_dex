@@ -23,7 +23,7 @@ impl ExchangeWebSocketConfig for Helius {
 
     fn get_subscribe_payload<'a>(pairs: impl AsRef<[&'a str]>) -> String {
         format!(
-            r#"{{"jsonrpc": "2.0", "method": "accountSubscribe", "params": [{}], "id": 1 }}"#,
+            r#"{{"jsonrpc": "2.0", "method": "accountSubscribe", "params": [{}, {{"encoding": "jsonParsed", "commitment": "confirmed"}}], "id": 1 }}"#,
             pairs
                 .as_ref()
                 .iter()
@@ -69,7 +69,7 @@ mod tests {
         env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
         let (tx, rx) = tokio::sync::mpsc::channel(1000);
-        websocket_run::<Helius>(tx, ["SysvarC1ock11111111111111111111111111111111"]).await;
+        websocket_run::<Helius>(tx, ["So11111111111111111111111111111111111111112"]).await;
         assert_eq!(dec!(1), dec!(1));
     }
 }
