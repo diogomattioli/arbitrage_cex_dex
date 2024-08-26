@@ -1,6 +1,7 @@
 use env_logger::Env;
 
 mod cex;
+mod dex;
 mod engine;
 
 pub type Sender<T> = tokio::sync::mpsc::Sender<T>;
