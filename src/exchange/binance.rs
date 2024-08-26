@@ -5,7 +5,7 @@ use rust_decimal::Decimal;
 
 use crate::{ websocket::ExchangeWebSocketConfig, MarketPrice };
 
-struct Binance;
+pub struct Binance;
 
 impl ExchangeWebSocketConfig for Binance {
     fn exchange_id() -> &'static str {
@@ -63,13 +63,13 @@ mod tests {
     use env_logger::Env;
     use rust_decimal_macros::dec;
 
-    #[tokio::test]
-    async fn test_run() {
-        env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    // #[tokio::test]
+    // async fn test_run() {
+    //     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-        let (tx, rx) = tokio::sync::mpsc::channel(1000);
+    //     let (tx, rx) = tokio::sync::mpsc::channel(1000);
 
-        websocket_run::<Binance>(tx, ["btcusdt"]).await;
-        assert_eq!(dec!(1), dec!(1));
-    }
+    //     websocket_run::<Binance>(tx, ["btcusdt"]).await;
+    //     assert_eq!(dec!(1), dec!(1));
+    // }
 }

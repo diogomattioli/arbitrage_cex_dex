@@ -41,9 +41,7 @@ pub async fn websocket_run<T: ExchangeWebSocketConfig>(
             match message {
                 Message::Text(payload) => {
                     if let Some(value) = T::parse_incoming_payload(payload) {
-                        if tx.send(value).await.is_err() {
-                            break;
-                        }
+                        tx.send_replace(value);
                     }
                 }
                 Message::Ping(value) => {
@@ -53,6 +51,11 @@ pub async fn websocket_run<T: ExchangeWebSocketConfig>(
                     break;
                 }
                 _ => {}
+            }
+
+            if tx.is_closed() {
+                let _ = stream.close(None).await;
+                return;
             }
         }
     }
