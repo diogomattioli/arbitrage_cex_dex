@@ -38,6 +38,7 @@ async fn main() {
 
                 r = rx.changed() => {
                     if r.is_err() {
+                        // all senders are closed
                         break;
                     }
 

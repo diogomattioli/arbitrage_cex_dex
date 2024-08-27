@@ -21,6 +21,7 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(
     markets: impl AsRef<[&str]>
 ) {
     while !tx.is_closed() {
+        // sleeping to avoid max cpu usage in case of retry
         sleep(Duration::from_millis(100)).await;
 
         log::debug!("{} connecting...", T::exchange_id());
@@ -45,8 +46,9 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(
 
             match message {
                 Message::Text(payload) => {
-                    if let Some(value) = T::parse_incoming_payload(payload) {
-                        tx.send_replace(value);
+                    if let Some(market_price) = T::parse_incoming_payload(payload) {
+                        // always replace to the most up-to-date market price
+                        tx.send_replace(market_price);
                     }
                 }
                 Message::Ping(value) => {
