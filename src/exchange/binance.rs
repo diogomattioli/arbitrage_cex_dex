@@ -57,7 +57,7 @@ impl BinanceBookTicker {
 
 #[cfg(test)]
 mod tests {
-    use crate::websocket::websocket_run;
+    use crate::websocket::run_websocket;
 
     use super::*;
     use env_logger::Env;
@@ -69,7 +69,7 @@ mod tests {
 
         let (tx, _rx) = tokio::sync::watch::channel(MarketPrice::default());
 
-        websocket_run::<Binance>(tx, ["btcusdt"]).await;
+        run_websocket::<Binance>(tx, ["btcusdt"]).await;
     }
 
     #[test]

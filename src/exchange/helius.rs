@@ -57,7 +57,7 @@ impl HeliusAccount {
 
 #[cfg(test)]
 mod tests {
-    use crate::websocket::websocket_run;
+    use crate::websocket::run_websocket;
 
     use super::*;
     use env_logger::Env;
@@ -68,7 +68,7 @@ mod tests {
         env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
         let (tx, _rx) = tokio::sync::watch::channel(MarketPrice::default());
-        websocket_run::<Helius>(tx, ["So11111111111111111111111111111111111111112"]).await;
+        run_websocket::<Helius>(tx, ["So11111111111111111111111111111111111111112"]).await;
     }
 
     #[test]

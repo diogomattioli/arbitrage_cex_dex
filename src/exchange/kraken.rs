@@ -66,7 +66,7 @@ impl KrakenBookTicker {
 
 #[cfg(test)]
 mod tests {
-    use crate::websocket::websocket_run;
+    use crate::websocket::run_websocket;
 
     use super::*;
     use env_logger::Env;
@@ -78,7 +78,7 @@ mod tests {
 
         let (tx, _rx) = tokio::sync::watch::channel(MarketPrice::default());
 
-        websocket_run::<Kraken>(tx, ["BTC/USDT"]).await;
+        run_websocket::<Kraken>(tx, ["BTC/USDT"]).await;
     }
 
     #[test]

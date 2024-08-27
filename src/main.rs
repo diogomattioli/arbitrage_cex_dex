@@ -1,7 +1,7 @@
 use env_logger::Env;
 use rust_decimal::Decimal;
 use tokio::join;
-use websocket::websocket_run;
+use websocket::run_websocket;
 
 mod exchange;
 mod engine;
@@ -28,7 +28,7 @@ async fn main() {
         ::signal(tokio::signal::unix::SignalKind::terminate())
         .expect("cannot listen for sigterm");
 
-    let engine_run = async move {
+    let run_engine = async move {
         let mut engine = engine::Engine::<&str>::default();
 
         loop {
@@ -52,10 +52,10 @@ async fn main() {
     };
 
     join!(
-        engine_run,
-        websocket_run::<Binance>(tx.clone(), ["btcusdt"]),
-        websocket_run::<Kraken>(tx.clone(), ["BTC/USDT"]),
-        websocket_run::<Helius>(tx, ["So11111111111111111111111111111111111111112"])
+        run_engine,
+        run_websocket::<Binance>(tx.clone(), ["btcusdt"]),
+        run_websocket::<Kraken>(tx.clone(), ["BTC/USDT"]),
+        run_websocket::<Helius>(tx, ["So11111111111111111111111111111111111111112"])
     );
 
     log::info!("gracefully exiting!");

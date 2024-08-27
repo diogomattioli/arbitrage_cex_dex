@@ -16,7 +16,7 @@ pub trait ExchangeWebSocketConfig {
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice>;
 }
 
-pub async fn websocket_run<T: ExchangeWebSocketConfig>(
+pub async fn run_websocket<T: ExchangeWebSocketConfig>(
     tx: Sender<MarketPrice>,
     markets: impl AsRef<[&str]>
 ) {
