@@ -12,13 +12,13 @@ const CONNECT_TIMEOUT: u64 = 5;
 pub trait ExchangeWebSocketConfig {
     fn exchange_id() -> &'static str;
     fn url() -> String;
-    fn get_subscribe_payload<'a>(pairs: impl AsRef<[&'a str]>) -> String;
+    fn get_subscribe_payload<'a>(markets: impl AsRef<[&'a str]>) -> String;
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice>;
 }
 
 pub async fn websocket_run<T: ExchangeWebSocketConfig>(
     tx: Sender<MarketPrice>,
-    pairs: impl AsRef<[&str]>
+    markets: impl AsRef<[&str]>
 ) {
     while !tx.is_closed() {
         sleep(Duration::from_millis(100)).await;
@@ -34,7 +34,7 @@ pub async fn websocket_run<T: ExchangeWebSocketConfig>(
 
         log::debug!("{} connected", T::exchange_id());
 
-        if stream.send(Message::Text(T::get_subscribe_payload(pairs.as_ref()))).await.is_err() {
+        if stream.send(Message::Text(T::get_subscribe_payload(markets.as_ref()))).await.is_err() {
             continue;
         }
 

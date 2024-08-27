@@ -16,13 +16,13 @@ impl ExchangeWebSocketConfig for Kraken {
         "wss://ws.kraken.com/v2".to_string()
     }
 
-    fn get_subscribe_payload<'a>(pairs: impl AsRef<[&'a str]>) -> String {
+    fn get_subscribe_payload<'a>(markets: impl AsRef<[&'a str]>) -> String {
         format!(
             r#"{{"method": "subscribe", "params": {{"channel": "ticker", "snapshot": false, "event_trigger": "bbo", "symbol": [{}]}}, "req_id": 1 }}"#,
-            pairs
+            markets
                 .as_ref()
                 .iter()
-                .map(|pair| format!(r#""{pair}""#))
+                .map(|market| format!(r#""{market}""#))
                 .collect::<Vec<_>>()
                 .join(", ")
         )

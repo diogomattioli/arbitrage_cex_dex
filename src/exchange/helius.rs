@@ -20,13 +20,13 @@ impl ExchangeWebSocketConfig for Helius {
         )
     }
 
-    fn get_subscribe_payload<'a>(pairs: impl AsRef<[&'a str]>) -> String {
+    fn get_subscribe_payload<'a>(markets: impl AsRef<[&'a str]>) -> String {
         format!(
             r#"{{"jsonrpc": "2.0", "method": "accountSubscribe", "params": [{}, {{"encoding": "jsonParsed", "commitment": "confirmed"}}], "id": 1 }}"#,
-            pairs
+            markets
                 .as_ref()
                 .iter()
-                .map(|pair| format!(r#""{pair}""#))
+                .map(|market| format!(r#""{market}""#))
                 .collect::<Vec<_>>()
                 .join(", ")
         )

@@ -16,13 +16,13 @@ impl ExchangeWebSocketConfig for Binance {
         "wss://stream.binance.com:9443/ws".to_string()
     }
 
-    fn get_subscribe_payload<'a>(pairs: impl AsRef<[&'a str]>) -> String {
+    fn get_subscribe_payload<'a>(markets: impl AsRef<[&'a str]>) -> String {
         format!(
             r#"{{"method": "SUBSCRIBE", "params": [{}], "id": 1 }}"#,
-            pairs
+            markets
                 .as_ref()
                 .iter()
-                .map(|pair| format!(r#""{pair}@bookTicker""#))
+                .map(|market| format!(r#""{market}@bookTicker""#))
                 .collect::<Vec<_>>()
                 .join(", ")
         )
