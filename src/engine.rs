@@ -41,10 +41,7 @@ impl<I, P> Engine<I, P> where I: Hash + Ord + Clone, P: Ord + Clone {
     }
 
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = (&P, impl Iterator<Item = &I>)> {
-        self.prices
-            .iter()
-            .map(|v| (v.0, v.1.iter()))
-            .into_iter()
+        self.prices.iter().map(|v| (v.0, v.1.iter()))
     }
 
     pub fn len(&self) -> usize {
