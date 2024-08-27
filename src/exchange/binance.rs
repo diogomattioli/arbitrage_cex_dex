@@ -24,7 +24,7 @@ impl ExchangeWebSocketConfig for Binance {
                 .iter()
                 .map(|pair| format!(r#""{pair}@bookTicker""#))
                 .collect::<Vec<_>>()
-                .join(",")
+                .join(", ")
         )
     }
 
@@ -61,15 +61,56 @@ mod tests {
 
     use super::*;
     use env_logger::Env;
-    use rust_decimal_macros::dec;
 
-    // #[tokio::test]
-    // async fn test_run() {
-    //     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    #[ignore]
+    #[tokio::test]
+    async fn test_run() {
+        env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    //     let (tx, rx) = tokio::sync::mpsc::channel(1000);
+        let (tx, _rx) = tokio::sync::watch::channel(MarketPrice::default());
 
-    //     websocket_run::<Binance>(tx, ["btcusdt"]).await;
-    //     assert_eq!(dec!(1), dec!(1));
-    // }
+        websocket_run::<Binance>(tx, ["btcusdt"]).await;
+    }
+
+    #[test]
+    fn test_get_subscribe_payload() {
+        let payload = Binance::get_subscribe_payload(["btcusdt", "ethusdt"]);
+        assert_eq!(
+            payload,
+            r#"{"method": "SUBSCRIBE", "params": ["btcusdt@bookTicker", "ethusdt@bookTicker"], "id": 1 }"#
+        );
+    }
+
+    #[test]
+    fn test_parse_incoming_payload() {
+        let payload =
+            r#"{
+                "e": "24hrTicker",  
+                "E": 1672515782136, 
+                "s": "BNBBTC",      
+                "p": "0.0015",      
+                "P": "250.00",      
+                "w": "0.0018",      
+                "x": "0.0009",      
+                "c": "0.0025",      
+                "Q": "10",          
+                "b": "0.0024",      
+                "B": "10",          
+                "a": "0.0026",      
+                "A": "100",         
+                "o": "0.0010",      
+                "h": "0.0025",      
+                "l": "0.0010",      
+                "v": "10000",       
+                "q": "18",          
+                "O": 0,             
+                "C": 86400000,      
+                "F": 0,             
+                "L": 18150,         
+                "n": 18151          
+            }"#;
+        let market_price = Binance::parse_incoming_payload(payload.to_string()).unwrap();
+        assert_eq!(market_price.market, "BNBBTC");
+        assert_eq!(market_price.price, dec!(0.0025));
+    }
 }
