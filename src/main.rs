@@ -24,25 +24,38 @@ async fn main() {
 
     let (tx, mut rx) = tokio::sync::watch::channel(MarketPrice::default());
 
-    let engine_fut = async move {
+    let mut sigterm = tokio::signal::unix
+        ::signal(tokio::signal::unix::SignalKind::terminate())
+        .expect("cannot listen for sigterm");
+
+    let engine_run = async move {
         let mut engine = engine::Engine::<&str>::default();
 
-        while rx.changed().await.is_ok() {
-            let market_price = rx.borrow_and_update().clone();
+        loop {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => break,
+                _ = sigterm.recv() => break,     
 
-            log::trace!("{market_price:?}");
+                r = rx.changed() => {
+                    if r.is_err() {
+                        break;
+                    }
 
-            engine.update(market_price.exchange_id, market_price.price);
+                    let market_price = rx.borrow_and_update().clone();
 
-            engine.iter().for_each(|(exchange_id, price)| {
-                log::info!("iter {exchange_id}: {:?}", price.map(|x| *x).collect::<Vec<_>>());
-            });
+                    log::trace!("{market_price:?}");
+
+                    engine.update(market_price.exchange_id, market_price.price);
+                },   
+            }
         }
     };
 
     join!(
-        engine_fut,
+        engine_run,
         websocket_run::<Binance>(tx.clone(), ["btcusdt"]),
         websocket_run::<Kraken>(tx, ["BTC/USDT"])
     );
+
+    log::info!("gracefully exiting!");
 }
