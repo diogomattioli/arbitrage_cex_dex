@@ -9,17 +9,18 @@ use crate::{ Sender, MarketPrice };
 
 const CONNECT_TIMEOUT: u64 = 5;
 
+#[cfg(test)]
+use mockall::automock;
+
+#[cfg_attr(test, automock)]
 pub trait ExchangeWebSocketConfig {
     fn exchange_id() -> &'static str;
     fn url() -> String;
-    fn get_subscribe_payload<'a>(markets: impl AsRef<[&'a str]>) -> String;
+    fn get_subscribe_payload<'a>(markets: &[&'a str]) -> String;
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice>;
 }
 
-pub async fn run_websocket<T: ExchangeWebSocketConfig>(
-    tx: Sender<MarketPrice>,
-    markets: impl AsRef<[&str]>
-) {
+pub async fn run_websocket<T: ExchangeWebSocketConfig>(tx: Sender<MarketPrice>, markets: &[&str]) {
     while !tx.is_closed() {
         // sleeping to avoid max cpu usage in case of retry
         sleep(Duration::from_millis(100)).await;

@@ -16,7 +16,7 @@ impl ExchangeWebSocketConfig for Kraken {
         "wss://ws.kraken.com/v2".to_string()
     }
 
-    fn get_subscribe_payload<'a>(markets: impl AsRef<[&'a str]>) -> String {
+    fn get_subscribe_payload<'a>(markets: &[&'a str]) -> String {
         format!(
             r#"{{"method": "subscribe", "params": {{"channel": "ticker", "snapshot": false, "event_trigger": "bbo", "symbol": [{}]}}, "req_id": 1 }}"#,
             markets
@@ -78,12 +78,12 @@ mod tests {
 
         let (tx, _rx) = tokio::sync::watch::channel(MarketPrice::default());
 
-        run_websocket::<Kraken>(tx, ["BTC/USDT"]).await;
+        run_websocket::<Kraken>(tx, &["BTC/USDT"]).await;
     }
 
     #[test]
     fn test_get_subscribe_payload() {
-        let payload = Kraken::get_subscribe_payload(["BTC/USDT", "ETH/USDT"]);
+        let payload = Kraken::get_subscribe_payload(&["BTC/USDT", "ETH/USDT"]);
         assert_eq!(
             payload,
             r#"{"method": "subscribe", "params": {"channel": "ticker", "snapshot": false, "event_trigger": "bbo", "symbol": ["BTC/USDT", "ETH/USDT"]}, "req_id": 1 }"#

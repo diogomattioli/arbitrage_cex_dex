@@ -16,7 +16,7 @@ impl ExchangeWebSocketConfig for Binance {
         "wss://stream.binance.com:9443/ws".to_string()
     }
 
-    fn get_subscribe_payload<'a>(markets: impl AsRef<[&'a str]>) -> String {
+    fn get_subscribe_payload<'a>(markets: &[&'a str]) -> String {
         format!(
             r#"{{"method": "SUBSCRIBE", "params": [{}], "id": 1 }}"#,
             markets
@@ -69,12 +69,12 @@ mod tests {
 
         let (tx, _rx) = tokio::sync::watch::channel(MarketPrice::default());
 
-        run_websocket::<Binance>(tx, ["btcusdt"]).await;
+        run_websocket::<Binance>(tx, &["btcusdt"]).await;
     }
 
     #[test]
     fn test_get_subscribe_payload() {
-        let payload = Binance::get_subscribe_payload(["btcusdt", "ethusdt"]);
+        let payload = Binance::get_subscribe_payload(&["btcusdt", "ethusdt"]);
         assert_eq!(
             payload,
             r#"{"method": "SUBSCRIBE", "params": ["btcusdt@bookTicker", "ethusdt@bookTicker"], "id": 1 }"#
