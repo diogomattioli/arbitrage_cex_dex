@@ -26,7 +26,7 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(
 
         log::debug!("{} connecting...", T::exchange_id());
 
-        let Ok(Ok((mut stream, _))) = time::timeout(
+        let Ok(Ok((mut conn, _))) = time::timeout(
             Duration::from_secs(CONNECT_TIMEOUT),
             connect_async(T::url())
         ).await else {
@@ -35,13 +35,13 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(
 
         log::debug!("{} connected", T::exchange_id());
 
-        if stream.send(Message::Text(T::get_subscribe_payload(markets.as_ref()))).await.is_err() {
+        if conn.send(Message::Text(T::get_subscribe_payload(markets.as_ref()))).await.is_err() {
             continue;
         }
 
         log::debug!("{} subscribed", T::exchange_id());
 
-        while let Some(Ok(message)) = stream.next().await {
+        while let Some(Ok(message)) = conn.next().await {
             log::trace!("{} {message:?}", T::exchange_id());
 
             match message {
@@ -52,7 +52,7 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(
                     }
                 }
                 Message::Ping(value) => {
-                    let _ = stream.send(Message::Pong(value)).await;
+                    let _ = conn.send(Message::Pong(value)).await;
                 }
                 Message::Close(_) => {
                     break;
@@ -61,8 +61,8 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(
             }
 
             if tx.is_closed() {
-                let _ = stream.close(None).await;
-                return;
+                let _ = conn.close(None).await;
+                break;
             }
         }
     }
