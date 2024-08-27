@@ -29,7 +29,7 @@ impl ExchangeWebSocketConfig for Helius {
                 .iter()
                 .map(|pair| format!(r#""{pair}""#))
                 .collect::<Vec<_>>()
-                .join(",")
+                .join(", ")
         )
     }
 
@@ -62,14 +62,24 @@ mod tests {
 
     use super::*;
     use env_logger::Env;
-    use rust_decimal_macros::dec;
 
-    // #[tokio::test]
-    // async fn test_run() {
-    //     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    #[ignore]
+    #[tokio::test]
+    async fn test_run() {
+        env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    //     let (tx, rx) = tokio::sync::mpsc::channel(1000);
-    //     websocket_run::<Helius>(tx, ["So11111111111111111111111111111111111111112"]).await;
-    //     assert_eq!(dec!(1), dec!(1));
-    // }
+        let (tx, _rx) = tokio::sync::watch::channel(MarketPrice::default());
+        websocket_run::<Helius>(tx, ["So11111111111111111111111111111111111111112"]).await;
+    }
+
+    #[test]
+    fn test_get_subscribe_payload() {
+        let payload = Helius::get_subscribe_payload([
+            "So11111111111111111111111111111111111111112",
+        ]);
+        assert_eq!(
+            payload,
+            r#"{"jsonrpc": "2.0", "method": "accountSubscribe", "params": ["So11111111111111111111111111111111111111112", {"encoding": "jsonParsed", "commitment": "confirmed"}], "id": 1 }"#
+        );
+    }
 }
