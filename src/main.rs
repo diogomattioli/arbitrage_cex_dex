@@ -7,7 +7,7 @@ mod exchange;
 mod engine;
 mod websocket;
 
-use exchange::{ binance::Binance, kraken::Kraken };
+use exchange::{ binance::Binance, kraken::Kraken, helius::Helius };
 
 pub type Sender<T> = tokio::sync::watch::Sender<T>;
 
@@ -54,7 +54,8 @@ async fn main() {
     join!(
         engine_run,
         websocket_run::<Binance>(tx.clone(), ["btcusdt"]),
-        websocket_run::<Kraken>(tx, ["BTC/USDT"])
+        websocket_run::<Kraken>(tx.clone(), ["BTC/USDT"]),
+        websocket_run::<Helius>(tx, ["So11111111111111111111111111111111111111112"])
     );
 
     log::info!("gracefully exiting!");

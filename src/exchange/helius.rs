@@ -1,4 +1,3 @@
-use rust_decimal_macros::dec;
 use serde::Deserialize;
 
 use rust_decimal::Decimal;
@@ -52,7 +51,7 @@ struct HeliusAccount {
 
 impl HeliusAccount {
     pub fn price(&self) -> Decimal {
-        dec!(0)
+        todo!()
     }
 }
 
