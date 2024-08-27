@@ -47,6 +47,24 @@ async fn main() {
                     log::trace!("{market_price:?}");
 
                     engine.update(market_price.exchange_id, market_price.price);
+
+                    // print prices list
+                    println!();
+                    log::info!("Prices:");
+
+                    engine
+                        .iter()
+                        .enumerate()
+                        .for_each(|(idx, (price, exchange_ids))| {
+                            let mut price = *price;
+                            price.rescale(2);
+
+                            log::info!(
+                                "   {} - {price} {:?}",
+                                idx + 1,
+                                exchange_ids.map(|id| *id).collect::<Vec<_>>()
+                            );
+                        });
                 },   
             }
         }
