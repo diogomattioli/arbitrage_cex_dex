@@ -3,9 +3,11 @@ use futures::prelude::*;
 use std::time::Duration;
 
 use async_tungstenite::{ tokio::connect_async, tungstenite::Message };
-use tokio::time::sleep;
+use tokio::time::{ self, sleep };
 
 use crate::{ Sender, MarketPrice };
+
+const CONNECT_TIMEOUT: u64 = 5;
 
 pub trait ExchangeWebSocketConfig {
     fn exchange_id() -> &'static str;
@@ -23,7 +25,10 @@ pub async fn websocket_run<T: ExchangeWebSocketConfig>(
 
         log::debug!("{} connecting...", T::exchange_id());
 
-        let Ok((mut stream, _)) = connect_async(T::url()).await else {
+        let Ok(Ok((mut stream, _))) = time::timeout(
+            Duration::from_secs(CONNECT_TIMEOUT),
+            connect_async(T::url())
+        ).await else {
             continue;
         };
 
