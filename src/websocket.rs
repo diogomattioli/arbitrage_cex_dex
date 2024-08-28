@@ -68,3 +68,50 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(tx: Sender<MarketPrice>, 
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use env_logger::Env;
+    use mockall::Sequence;
+    use tokio::join;
+    use ws_mock::{ matchers::StringExact, ws_mock_server::{ WsMock, WsMockServer } };
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_run_websocket() {
+        env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
+        let server = WsMockServer::start().await;
+
+        let mut seq = Sequence::new();
+
+        let ctx = MockExchangeWebSocketConfig::exchange_id_context();
+        ctx.expect()
+            .times(..)
+            .return_const("test");
+
+        let ctx = MockExchangeWebSocketConfig::url_context();
+        ctx.expect().once().return_const(server.uri().await);
+
+        let ctx = MockExchangeWebSocketConfig::get_subscribe_payload_context();
+        ctx.expect().once().in_sequence(&mut seq).return_const("test_subscribe".to_string());
+
+        let ctx = MockExchangeWebSocketConfig::parse_incoming_payload_context();
+        ctx.expect().once().in_sequence(&mut seq).return_const(None);
+
+        WsMock::new()
+            .matcher(StringExact::new("test_subscribe"))
+            .respond_with(Message::Text("test_response".to_string()))
+            .expect(1)
+            .mount(&server).await;
+
+        let (tx, rx) = tokio::sync::watch::channel(MarketPrice::default());
+
+        join!(run_websocket::<MockExchangeWebSocketConfig>(tx, &["btcusdt"]), async move {
+            drop(rx);
+        });
+
+        server.verify().await;
+    }
+}
