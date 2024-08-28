@@ -16,7 +16,7 @@ impl ExchangeWebSocketConfig for Binance {
         "wss://stream.binance.com:9443/ws".to_string()
     }
 
-    fn get_subscribe_payload<'a>(markets: &[&'a str]) -> String {
+    fn get_subscribe_payload(markets: &[&str]) -> String {
         format!(
             r#"{{"method": "SUBSCRIBE", "params": [{}], "id": 1 }}"#,
             markets

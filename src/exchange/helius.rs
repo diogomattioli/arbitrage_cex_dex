@@ -20,7 +20,7 @@ impl ExchangeWebSocketConfig for Helius {
         )
     }
 
-    fn get_subscribe_payload<'a>(markets: &[&'a str]) -> String {
+    fn get_subscribe_payload(markets: &[&str]) -> String {
         format!(
             r#"{{"jsonrpc": "2.0", "method": "accountSubscribe", "params": [{}, {{"encoding": "jsonParsed", "commitment": "confirmed"}}], "id": 1 }}"#,
             markets

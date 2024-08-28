@@ -16,7 +16,7 @@ impl ExchangeWebSocketConfig for Kraken {
         "wss://ws.kraken.com/v2".to_string()
     }
 
-    fn get_subscribe_payload<'a>(markets: &[&'a str]) -> String {
+    fn get_subscribe_payload(markets: &[&str]) -> String {
         format!(
             r#"{{"method": "subscribe", "params": {{"channel": "ticker", "snapshot": false, "event_trigger": "bbo", "symbol": [{}]}}, "req_id": 1 }}"#,
             markets

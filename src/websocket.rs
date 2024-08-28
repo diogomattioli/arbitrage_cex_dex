@@ -36,7 +36,7 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(tx: Sender<MarketPrice>, 
 
         log::debug!("{} connected", T::exchange_id());
 
-        if conn.send(Message::Text(T::get_subscribe_payload(markets.as_ref()))).await.is_err() {
+        if conn.send(Message::Text(T::get_subscribe_payload(markets))).await.is_err() {
             continue;
         }
 
