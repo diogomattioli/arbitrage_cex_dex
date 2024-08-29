@@ -38,18 +38,13 @@ impl ExchangeWebSocketConfig for Helius {
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
         match serde_json::from_str::<HeliusEnvelope>(&payload) {
             Ok(envelope) => {
-                let base64 = envelope.params.result.value.data.0[0].clone();
+                let owner = envelope.params.result.value.owner.clone();
+                let pool_state: PoolState = envelope.into();
+                let price = pool_state.price();
 
-                let mut decoded = BASE64_STANDARD.decode(base64).ok()?;
-                // must skip first 8 bytes
-                decoded.drain(0..8);
-
-                let pool = PoolState::try_from_slice(&decoded).ok()?;
-
-                let price = pool.price();
                 Some(MarketPrice {
                     exchange_id: Self::exchange_id(),
-                    market: envelope.params.result.value.owner,
+                    market: owner,
                     price,
                 })
             }
@@ -83,66 +78,12 @@ struct HeliusValue {
 struct HeliusData(Vec<String>);
 
 #[repr(C)]
-#[derive(Debug, Clone, BorshDeserialize, Default)]
-struct PublicKey([u8; 32]);
-
-#[repr(C)]
-#[derive(Debug, Clone, BorshDeserialize, Default)]
-struct RewardInfo {
-    reward_state: u8,
-    open_time: u64,
-    end_time: u64,
-    last_update_time: u64,
-    emissions_per_second_x64: u128,
-    reward_total_emissioned: u64,
-    reward_claimed: u64,
-    token_mint: PublicKey,
-    token_vault: PublicKey,
-    authority: PublicKey,
-    reward_growth_global_x64: u128,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, BorshDeserialize, Default)]
+#[derive(BorshDeserialize)]
 struct PoolState {
-    bump: [u8; 1],
-    amm_config: PublicKey,
-    owner: PublicKey,
-    token_mint0: PublicKey,
-    token_mint1: PublicKey,
-    token_vault0: PublicKey,
-    token_vault1: PublicKey,
-    observation_key: PublicKey,
-    mint_decimals0: u8,
-    mint_decimals1: u8,
-    tick_spacing: u16,
-    liquidity: u128,
+    bump: u8,
+    padding_before: [u8; 252],
     sqrt_price_x64: u128,
-    tick_current: i32,
-    padding1: u16,
-    padding2: u16,
-    fee_growth_global0_x64: u128,
-    fee_growth_global1_x64: u128,
-    protocol_fees_token0: u64,
-    protocol_fees_token1: u64,
-    swap_in_amount_token0: u128,
-    swap_out_amount_token1: u128,
-    swap_in_amount_token1: u128,
-    swap_out_amount_token0: u128,
-    status: u8,
-    padding: [u8; 7],
-    reward_infos: [RewardInfo; 3],
-    tick_array_bitmap: [u64; 16],
-    total_fees_token0: u64,
-    total_fees_claimed_token0: u64,
-    total_fees_token1: u64,
-    total_fees_claimed_token1: u64,
-    fund_fees_token0: u64,
-    fund_fees_token1: u64,
-    open_time: u64,
-    recent_epoch: u64,
-    padding3: [u64; 24],
-    padding4: [u64; 32],
+    padding_after: [u8; 1275],
 }
 
 impl PoolState {
@@ -154,6 +95,14 @@ impl PoolState {
             Decimal::from_u128((2_u128).pow(64)).unwrap_or(dec!(1));
         let price = normalized * dec!(1000);
         price
+    }
+}
+
+impl From<HeliusEnvelope> for PoolState {
+    fn from(envelope: HeliusEnvelope) -> Self {
+        let base64 = envelope.params.result.value.data.0[0].clone();
+        let decoded = BASE64_STANDARD.decode(base64).unwrap();
+        PoolState::try_from_slice(&decoded).unwrap()
     }
 }
 
@@ -177,9 +126,33 @@ mod tests {
     fn test_price() {
         let pool = PoolState {
             sqrt_price_x64: 6_990_823_775_062_275_942,
-            ..Default::default()
+            bump: 0,
+            padding_before: [0; 252],
+            padding_after: [0; 1275],
         };
         assert_eq!(pool.price().round_dp(2), dec!(143.62));
+    }
+
+    #[test]
+    fn test_decoding() {
+        let envelope = HeliusEnvelope {
+            params: HeliusParams {
+                result: HeliusResult {
+                    value: HeliusValue {
+                        owner: "3nMFwZXwY1s1M5s8vYAHqd4wGs4iSxXE4LRoUMMYqEgF".to_string(),
+                        data: HeliusData(
+                            vec![
+                                "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".to_string()
+                            ]
+                        ),
+                    },
+                },
+            },
+        };
+
+        let pool: PoolState = envelope.into();
+
+        assert_eq!(pool.price().round_dp(2), dec!(145.03));
     }
 
     #[test]
