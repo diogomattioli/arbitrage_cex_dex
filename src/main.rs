@@ -1,6 +1,7 @@
 use env_logger::Env;
+use futures::future::select_all;
 use rust_decimal::Decimal;
-use tokio::join;
+use tokio::{ join, sync::watch::{ error::RecvError, Receiver } };
 use websocket::run_websocket;
 
 mod exchange;
@@ -22,23 +23,45 @@ struct MarketPrice {
 async fn main() {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    let (tx, mut rx) = tokio::sync::watch::channel(MarketPrice::default());
+    let (tx, mut rx_binance) = tokio::sync::watch::channel(MarketPrice::default());
+    let future_binance = run_websocket::<Binance>(tx, &["solusdt"]);
 
-    let mut sigterm = tokio::signal::unix
-        ::signal(tokio::signal::unix::SignalKind::terminate())
-        .expect("cannot listen for sigterm");
+    let (tx, mut rx_kraken) = tokio::sync::watch::channel(MarketPrice::default());
+    let future_kraken = run_websocket::<Kraken>(tx.clone(), &["SOL/USDT"]);
 
-    let run_engine = async move {
+    let (tx, mut rx_helius) = tokio::sync::watch::channel(MarketPrice::default());
+    let future_helius = run_websocket::<Helius>(
+        tx,
+        &["3nMFwZXwY1s1M5s8vYAHqd4wGs4iSxXE4LRoUMMYqEgF"]
+    );
+
+    let future_engine = async move {
         let mut engine = engine::Engine::<&str>::default();
 
+        let mut sigterm = tokio::signal::unix
+            ::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("cannot listen for sigterm");
+
         loop {
+            async fn future_receiver_changed(
+                rx: &mut Receiver<MarketPrice>
+            ) -> (Result<(), RecvError>, &mut Receiver<MarketPrice>) {
+                (rx.changed().await, rx)
+            }
+
+            let receivers_changed = [
+                Box::pin(future_receiver_changed(&mut rx_binance)),
+                Box::pin(future_receiver_changed(&mut rx_kraken)),
+                Box::pin(future_receiver_changed(&mut rx_helius)),
+            ];
+
             tokio::select! {
                 _ = tokio::signal::ctrl_c() => break,
                 _ = sigterm.recv() => break,     
 
-                r = rx.changed() => {
-                    if r.is_err() {
-                        // all senders are closed
+                ((res, rx), ..) = select_all(receivers_changed) => {
+                    if res.is_err() {
+                        // sender is closed
                         break;
                     }
 
@@ -65,17 +88,12 @@ async fn main() {
                                 exchange_ids.map(|id| *id).collect::<Vec<_>>()
                             );
                         });
-                },   
+                }
             }
         }
     };
 
-    join!(
-        run_engine,
-        run_websocket::<Binance>(tx.clone(), &["solusdt"]),
-        run_websocket::<Kraken>(tx.clone(), &["SOL/USDT"]),
-        run_websocket::<Helius>(tx, &["3nMFwZXwY1s1M5s8vYAHqd4wGs4iSxXE4LRoUMMYqEgF"])
-    );
+    join!(future_engine, future_binance, future_kraken, future_helius);
 
     log::info!("gracefully exiting!");
 }
