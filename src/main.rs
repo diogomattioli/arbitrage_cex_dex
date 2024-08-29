@@ -72,9 +72,9 @@ async fn main() {
 
     join!(
         run_engine,
-        run_websocket::<Binance>(tx.clone(), &["btcusdt"]),
-        run_websocket::<Kraken>(tx.clone(), &["BTC/USDT"]),
-        run_websocket::<Helius>(tx, &["So11111111111111111111111111111111111111112"])
+        run_websocket::<Binance>(tx.clone(), &["solusdt"]),
+        run_websocket::<Kraken>(tx.clone(), &["SOL/USDT"]),
+        run_websocket::<Helius>(tx, &["3nMFwZXwY1s1M5s8vYAHqd4wGs4iSxXE4LRoUMMYqEgF"])
     );
 
     log::info!("gracefully exiting!");
