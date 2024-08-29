@@ -57,7 +57,7 @@ async fn main() {
                         .enumerate()
                         .for_each(|(idx, (price, exchange_ids))| {
                             let mut price = *price;
-                            price.rescale(2);
+                            price.rescale(4);
 
                             log::info!(
                                 "   {} - {price} {:?}",
