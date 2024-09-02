@@ -27,7 +27,7 @@ async fn main() {
     let future_binance = run_websocket::<Binance>(tx, &["solusdt"]);
 
     let (tx, mut rx_kraken) = tokio::sync::watch::channel(MarketPrice::default());
-    let future_kraken = run_websocket::<Kraken>(tx.clone(), &["SOL/USDT"]);
+    let future_kraken = run_websocket::<Kraken>(tx, &["SOL/USDT"]);
 
     let (tx, mut rx_helius) = tokio::sync::watch::channel(MarketPrice::default());
     let future_helius = run_websocket::<Helius>(
