@@ -4,6 +4,7 @@ use rust_decimal_macros::dec;
 use serde::Deserialize;
 
 use base64::prelude::*;
+use serde_json::json;
 
 use crate::{ websocket::ExchangeWebSocketConfig, MarketPrice };
 
@@ -24,15 +25,13 @@ impl ExchangeWebSocketConfig for Helius {
     }
 
     fn get_subscribe_payload(markets: &[&str]) -> String {
-        format!(
-            r#"{{"jsonrpc": "2.0", "method": "accountSubscribe", "params": [{}, {{"encoding": "base64", "commitment": "confirmed"}}], "id": 1 }}"#,
-            markets
-                .as_ref()
-                .iter()
-                .map(|market| format!(r#""{market}""#))
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
+        let mut params = json!(markets.iter().collect::<Vec<_>>());
+        params
+            .as_array_mut()
+            .expect("cannot find helius subscribe params")
+            .push(json!({"encoding": "base64", "commitment": "confirmed"}));
+
+        json!({"jsonrpc": "2.0", "id": 1, "method": "accountSubscribe", "params": params }).to_string()
     }
 
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
@@ -154,11 +153,11 @@ mod tests {
     #[test]
     fn test_get_subscribe_payload() {
         let payload = Helius::get_subscribe_payload(
-            &["So11111111111111111111111111111111111111112"]
+            &["So11111111111111111111111111111111111111112", "123"]
         );
         assert_eq!(
             payload,
-            r#"{"jsonrpc": "2.0", "method": "accountSubscribe", "params": ["So11111111111111111111111111111111111111112", {"encoding": "base64", "commitment": "confirmed"}], "id": 1 }"#
+            json!({"jsonrpc": "2.0", "id": 1, "method": "accountSubscribe", "params": ["So11111111111111111111111111111111111111112", "123", {"encoding": "base64", "commitment": "confirmed"}] }).to_string()
         );
     }
 }

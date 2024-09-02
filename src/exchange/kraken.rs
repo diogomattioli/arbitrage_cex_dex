@@ -2,6 +2,7 @@ use rust_decimal_macros::dec;
 use serde::Deserialize;
 
 use rust_decimal::Decimal;
+use serde_json::json;
 
 use crate::{ websocket::ExchangeWebSocketConfig, MarketPrice };
 
@@ -17,15 +18,10 @@ impl ExchangeWebSocketConfig for Kraken {
     }
 
     fn get_subscribe_payload(markets: &[&str]) -> String {
-        format!(
-            r#"{{"method": "subscribe", "params": {{"channel": "ticker", "snapshot": false, "event_trigger": "bbo", "symbol": [{}]}}, "req_id": 1 }}"#,
-            markets
+        json!({"req_id": 1, "method": "subscribe", "params": {"channel": "ticker", "snapshot": false, "event_trigger": "bbo", "symbol": markets
                 .as_ref()
                 .iter()
-                .map(|market| format!(r#""{market}""#))
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
+                .collect::<Vec<_>>()}}).to_string()
     }
 
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
@@ -81,7 +77,7 @@ mod tests {
         let payload = Kraken::get_subscribe_payload(&["BTC/USDT", "ETH/USDT"]);
         assert_eq!(
             payload,
-            r#"{"method": "subscribe", "params": {"channel": "ticker", "snapshot": false, "event_trigger": "bbo", "symbol": ["BTC/USDT", "ETH/USDT"]}, "req_id": 1 }"#
+            json!({"req_id": 1, "method": "subscribe", "params": {"channel": "ticker", "snapshot": false, "event_trigger": "bbo", "symbol": ["BTC/USDT", "ETH/USDT"]}}).to_string()
         );
     }
 

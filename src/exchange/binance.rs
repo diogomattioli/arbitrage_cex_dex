@@ -2,6 +2,7 @@ use rust_decimal_macros::dec;
 use serde::Deserialize;
 
 use rust_decimal::Decimal;
+use serde_json::json;
 
 use crate::{ websocket::ExchangeWebSocketConfig, MarketPrice };
 
@@ -17,15 +18,11 @@ impl ExchangeWebSocketConfig for Binance {
     }
 
     fn get_subscribe_payload(markets: &[&str]) -> String {
-        format!(
-            r#"{{"method": "SUBSCRIBE", "params": [{}], "id": 1 }}"#,
-            markets
+        json!({"id": 1, "method": "SUBSCRIBE", "params": markets
                 .as_ref()
                 .iter()
-                .map(|market| format!(r#""{market}@bookTicker""#))
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
+                .map(|market| format!("{market}@bookTicker"))
+                .collect::<Vec<_>>()}).to_string()
     }
 
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
@@ -74,7 +71,7 @@ mod tests {
         let payload = Binance::get_subscribe_payload(&["btcusdt", "ethusdt"]);
         assert_eq!(
             payload,
-            r#"{"method": "SUBSCRIBE", "params": ["btcusdt@bookTicker", "ethusdt@bookTicker"], "id": 1 }"#
+            json!({"id": 1, "method": "SUBSCRIBE", "params": ["btcusdt@bookTicker", "ethusdt@bookTicker"]}).to_string()
         );
     }
 
