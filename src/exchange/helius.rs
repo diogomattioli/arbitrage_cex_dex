@@ -36,20 +36,16 @@ impl ExchangeWebSocketConfig for Helius {
     }
 
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
-        match serde_json::from_str::<HeliusEnvelope>(&payload) {
-            Ok(envelope) => {
-                let owner = envelope.params.result.value.owner.clone();
-                let pool_state: PoolState = envelope.into();
-                let price = pool_state.price();
+        let envelope = serde_json::from_str::<HeliusEnvelope>(&payload).ok()?;
+        let owner = envelope.params.result.value.owner.clone();
+        let pool_state: PoolState = envelope.into();
+        let price = pool_state.price();
 
-                Some(MarketPrice {
-                    exchange_id: Self::exchange_id(),
-                    market: owner,
-                    price,
-                })
-            }
-            Err(_) => None,
-        }
+        Some(MarketPrice {
+            exchange_id: Self::exchange_id(),
+            market: owner,
+            price,
+        })
     }
 }
 

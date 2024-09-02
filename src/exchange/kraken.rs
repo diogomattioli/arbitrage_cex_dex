@@ -29,20 +29,15 @@ impl ExchangeWebSocketConfig for Kraken {
     }
 
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
-        match serde_json::from_str::<KrakenBookEnvelope>(&payload) {
-            Ok(envelope) => {
-                let Some(tick) = envelope.data.first() else {
-                    return None;
-                };
-                let price = tick.price();
-                Some(MarketPrice {
-                    exchange_id: Self::exchange_id(),
-                    market: tick.symbol.clone(),
-                    price,
-                })
-            }
-            Err(_) => None,
-        }
+        let envelope = serde_json::from_str::<KrakenBookEnvelope>(&payload).ok()?;
+        let tick = envelope.data.first()?;
+        let price = tick.price();
+
+        Some(MarketPrice {
+            exchange_id: Self::exchange_id(),
+            market: tick.symbol.clone(),
+            price,
+        })
     }
 }
 

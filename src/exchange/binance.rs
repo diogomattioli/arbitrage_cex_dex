@@ -29,13 +29,10 @@ impl ExchangeWebSocketConfig for Binance {
     }
 
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
-        match serde_json::from_str::<BinanceBookTicker>(&payload) {
-            Ok(tick) => {
-                let price = tick.price();
-                Some(MarketPrice { exchange_id: Self::exchange_id(), market: tick.symbol, price })
-            }
-            Err(_) => None,
-        }
+        let tick = serde_json::from_str::<BinanceBookTicker>(&payload).ok()?;
+        let price = tick.price();
+
+        Some(MarketPrice { exchange_id: Self::exchange_id(), market: tick.symbol, price })
     }
 }
 
