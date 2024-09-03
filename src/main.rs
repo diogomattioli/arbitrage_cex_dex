@@ -56,8 +56,14 @@ async fn main() {
             ];
 
             tokio::select! {
-                _ = tokio::signal::ctrl_c() => break,
-                _ = sigterm.recv() => break,     
+                _ = tokio::signal::ctrl_c() => {
+                    log::warn!("ctrl+c received");
+                    break;
+                },
+                _ = sigterm.recv() => {
+                    log::warn!("sigterm received");
+                    break;
+                },     
 
                 ((res, rx), ..) = select_all(receivers_changed) => {
                     if res.is_err() {
@@ -72,7 +78,7 @@ async fn main() {
                     engine.update(market_price.exchange_id, market_price.price);
 
                     // print prices list
-                    println!();
+                    log::info!("");
                     log::info!("Prices:");
 
                     engine
