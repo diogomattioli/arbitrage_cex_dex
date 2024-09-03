@@ -13,9 +13,7 @@ use std::env;
 pub struct Helius;
 
 impl ExchangeWebSocketConfig for Helius {
-    fn exchange_id() -> &'static str {
-        "helius"
-    }
+    const EXCHANGE_ID: &'static str = "helius";
 
     fn url() -> String {
         format!(
@@ -40,7 +38,7 @@ impl ExchangeWebSocketConfig for Helius {
         let pool_state: PoolState = envelope.try_into()?;
 
         Ok(MarketPrice {
-            exchange_id: Self::exchange_id(),
+            exchange_id: Self::EXCHANGE_ID,
             price: pool_state.price(),
             market: owner,
         })

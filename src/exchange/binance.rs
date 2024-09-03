@@ -9,9 +9,7 @@ use crate::{ websocket::ExchangeWebSocketConfig, MarketPrice };
 pub struct Binance;
 
 impl ExchangeWebSocketConfig for Binance {
-    fn exchange_id() -> &'static str {
-        "binance"
-    }
+    const EXCHANGE_ID: &'static str = "binance";
 
     fn url() -> String {
         "wss://stream.binance.com:9443/ws".to_string()
@@ -29,7 +27,7 @@ impl ExchangeWebSocketConfig for Binance {
         let tick = serde_json::from_str::<BinanceBookTicker>(&payload)?;
 
         Ok(MarketPrice {
-            exchange_id: Self::exchange_id(),
+            exchange_id: Self::EXCHANGE_ID,
             price: tick.price(),
             market: tick.symbol,
         })

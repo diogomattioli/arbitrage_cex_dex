@@ -9,9 +9,7 @@ use crate::{ websocket::ExchangeWebSocketConfig, MarketPrice };
 pub struct Kraken;
 
 impl ExchangeWebSocketConfig for Kraken {
-    fn exchange_id() -> &'static str {
-        "kraken"
-    }
+    const EXCHANGE_ID: &'static str = "kraken";
 
     fn url() -> String {
         "wss://ws.kraken.com/v2".to_string()
@@ -31,7 +29,7 @@ impl ExchangeWebSocketConfig for Kraken {
             .ok_or(std::io::Error::new(std::io::ErrorKind::InvalidData, "no book tick"))?;
 
         Ok(MarketPrice {
-            exchange_id: Self::exchange_id(),
+            exchange_id: Self::EXCHANGE_ID,
             price: tick.price(),
             market: tick.symbol.clone(),
         })
