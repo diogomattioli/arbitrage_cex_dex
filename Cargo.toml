@@ -11,7 +11,7 @@ rust_decimal = "1.36.0"
 rust_decimal_macros = "1.36.0"
 
 futures = "0.3.30"
-tokio = {version = "1.39.3", features = ["full"]}
+tokio = {version = "1.40.0", features = ["rt-multi-thread", "sync", "signal", "time", "macros"]}
 
 async-tungstenite = { version = "0.27.0", features = ["tokio-runtime", "async-tls", "async-native-tls"] }
 serde = {version = "1.0.209", features = ["derive"] }
