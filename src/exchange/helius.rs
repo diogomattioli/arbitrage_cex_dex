@@ -37,7 +37,7 @@ impl ExchangeWebSocketConfig for Helius {
     fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
         let envelope = serde_json::from_str::<HeliusEnvelope>(&payload).ok()?;
         let owner = envelope.params.result.value.owner.clone();
-        let pool_state: PoolState = envelope.into();
+        let pool_state: PoolState = envelope.try_into().ok()?;
 
         Some(MarketPrice {
             exchange_id: Self::exchange_id(),
@@ -92,11 +92,13 @@ impl PoolState {
     }
 }
 
-impl From<HeliusEnvelope> for PoolState {
-    fn from(envelope: HeliusEnvelope) -> Self {
+impl TryFrom<HeliusEnvelope> for PoolState {
+    type Error = std::io::Error;
+
+    fn try_from(envelope: HeliusEnvelope) -> Result<Self, Self::Error> {
         let base64 = envelope.params.result.value.data.0[0].clone();
         let decoded = BASE64_STANDARD.decode(base64).unwrap();
-        PoolState::try_from_slice(&decoded).unwrap()
+        PoolState::try_from_slice(&decoded)
     }
 }
 
@@ -144,7 +146,7 @@ mod tests {
             },
         };
 
-        let pool: PoolState = envelope.into();
+        let pool: PoolState = envelope.try_into().unwrap();
 
         assert_eq!(pool.price().round_dp(2), dec!(145.03));
     }
