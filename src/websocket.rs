@@ -22,7 +22,7 @@ pub trait ExchangeWebSocketConfig {
     fn exchange_id() -> &'static str;
     fn url() -> String;
     fn get_subscribe_payload<'a>(markets: &[&'a str]) -> String;
-    fn parse_incoming_payload(payload: String) -> Option<MarketPrice>;
+    fn parse_incoming_payload(payload: String) -> Result<MarketPrice, std::io::Error>;
 }
 
 pub async fn run_websocket<T: ExchangeWebSocketConfig>(tx: Sender<MarketPrice>, markets: &[&str]) {
@@ -67,7 +67,7 @@ pub async fn run_websocket<T: ExchangeWebSocketConfig>(tx: Sender<MarketPrice>, 
 
                         match message {
                             Message::Text(payload) => {
-                                if let Some(market_price) = T::parse_incoming_payload(payload) {
+                                if let Ok(market_price) = T::parse_incoming_payload(payload) {
                                     // always replace to the most up-to-date market price
                                     tx.send_replace(market_price);
                                 }
@@ -130,7 +130,10 @@ mod tests {
         ctx.expect().once().in_sequence(&mut seq).return_const("test_subscribe".to_string());
 
         let ctx = MockExchangeWebSocketConfig::parse_incoming_payload_context();
-        ctx.expect().once().in_sequence(&mut seq).return_const(None);
+        ctx.expect()
+            .once()
+            .in_sequence(&mut seq)
+            .returning(|_| Ok(MarketPrice::default()));
 
         WsMock::new()
             .matcher(StringExact::new("test_subscribe"))

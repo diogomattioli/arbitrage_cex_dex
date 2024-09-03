@@ -34,12 +34,12 @@ impl ExchangeWebSocketConfig for Helius {
         json!({"jsonrpc": "2.0", "id": 1, "method": "accountSubscribe", "params": params }).to_string()
     }
 
-    fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
-        let envelope = serde_json::from_str::<HeliusEnvelope>(&payload).ok()?;
+    fn parse_incoming_payload(payload: String) -> Result<MarketPrice, std::io::Error> {
+        let envelope = serde_json::from_str::<HeliusEnvelope>(&payload)?;
         let owner = envelope.params.result.value.owner.clone();
-        let pool_state: PoolState = envelope.try_into().ok()?;
+        let pool_state: PoolState = envelope.try_into()?;
 
-        Some(MarketPrice {
+        Ok(MarketPrice {
             exchange_id: Self::exchange_id(),
             price: pool_state.price(),
             market: owner,

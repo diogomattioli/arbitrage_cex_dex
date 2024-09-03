@@ -25,10 +25,10 @@ impl ExchangeWebSocketConfig for Binance {
                 .collect::<Vec<_>>()}).to_string()
     }
 
-    fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
-        let tick = serde_json::from_str::<BinanceBookTicker>(&payload).ok()?;
+    fn parse_incoming_payload(payload: String) -> Result<MarketPrice, std::io::Error> {
+        let tick = serde_json::from_str::<BinanceBookTicker>(&payload)?;
 
-        Some(MarketPrice {
+        Ok(MarketPrice {
             exchange_id: Self::exchange_id(),
             price: tick.price(),
             market: tick.symbol,

@@ -24,11 +24,13 @@ impl ExchangeWebSocketConfig for Kraken {
                 .collect::<Vec<_>>()}}).to_string()
     }
 
-    fn parse_incoming_payload(payload: String) -> Option<MarketPrice> {
-        let envelope = serde_json::from_str::<KrakenBookEnvelope>(&payload).ok()?;
-        let tick = envelope.data.first()?;
+    fn parse_incoming_payload(payload: String) -> Result<MarketPrice, std::io::Error> {
+        let envelope = serde_json::from_str::<KrakenBookEnvelope>(&payload)?;
+        let tick = envelope.data
+            .first()
+            .ok_or(std::io::Error::new(std::io::ErrorKind::InvalidData, "no book tick"))?;
 
-        Some(MarketPrice {
+        Ok(MarketPrice {
             exchange_id: Self::exchange_id(),
             price: tick.price(),
             market: tick.symbol.clone(),
