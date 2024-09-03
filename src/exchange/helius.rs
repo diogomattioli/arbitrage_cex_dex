@@ -38,12 +38,11 @@ impl ExchangeWebSocketConfig for Helius {
         let envelope = serde_json::from_str::<HeliusEnvelope>(&payload).ok()?;
         let owner = envelope.params.result.value.owner.clone();
         let pool_state: PoolState = envelope.into();
-        let price = pool_state.price();
 
         Some(MarketPrice {
             exchange_id: Self::exchange_id(),
+            price: pool_state.price(),
             market: owner,
-            price,
         })
     }
 }
