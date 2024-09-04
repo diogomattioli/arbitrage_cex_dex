@@ -24,18 +24,21 @@ async fn main() {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let (tx, mut rx_binance) = tokio::sync::watch::channel(MarketPrice::default());
-    let future_binance = run_websocket::<Binance>(tx, &["solusdt"]);
+    let future_binance = tokio::spawn(async move {
+        run_websocket::<Binance>(tx, &["solusdt"]).await
+    });
 
     let (tx, mut rx_kraken) = tokio::sync::watch::channel(MarketPrice::default());
-    let future_kraken = run_websocket::<Kraken>(tx, &["SOL/USDT"]);
+    let future_kraken = tokio::spawn(async move {
+        run_websocket::<Kraken>(tx, &["SOL/USDT"]).await;
+    });
 
     let (tx, mut rx_helius) = tokio::sync::watch::channel(MarketPrice::default());
-    let future_helius = run_websocket::<Helius>(
-        tx,
-        &["3nMFwZXwY1s1M5s8vYAHqd4wGs4iSxXE4LRoUMMYqEgF"]
-    );
+    let future_helius = tokio::spawn(async {
+        run_websocket::<Helius>(tx, &["3nMFwZXwY1s1M5s8vYAHqd4wGs4iSxXE4LRoUMMYqEgF"]).await;
+    });
 
-    let future_engine = async move {
+    let future_engine = tokio::spawn(async move {
         let mut engine = engine::Engine::<&str>::default();
 
         let mut sigterm = tokio::signal::unix
@@ -97,9 +100,9 @@ async fn main() {
                 }
             }
         }
-    };
+    });
 
-    join!(future_engine, future_binance, future_kraken, future_helius);
+    let _ = join!(future_engine, future_binance, future_kraken, future_helius);
 
     log::info!("gracefully exiting!");
 }
